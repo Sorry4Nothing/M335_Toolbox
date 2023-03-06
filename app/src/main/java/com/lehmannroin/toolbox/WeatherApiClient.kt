@@ -9,6 +9,7 @@ import org.json.JSONObject
 data class WeatherData(
     val temperature: Double,
     val feelsLike: Double,
+    val description: String,
     val icon: String,
     val cityName: String
 )
@@ -40,14 +41,16 @@ class WeatherApiClient(private val apiKey: String) {
 
                 val temperature = json.getJSONObject("main").getDouble("temp")
                 val feelsLike = json.getJSONObject("main").getDouble("feels_like")
+                val description = json.getJSONArray("weather").getJSONObject(0).getString("description")
                 val icon = json.getJSONArray("weather").getJSONObject(0).getString("icon")
                 val cityName = json.getString("name")
 
                 weatherData = WeatherData(
                     temperature,
                     feelsLike,
+                    description,
                     icon,
-                    cityName
+                    cityName,
                 )
             } else {
                 connection.disconnect()

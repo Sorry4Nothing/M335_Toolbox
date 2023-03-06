@@ -15,6 +15,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.squareup.picasso.Picasso
 
 class Wetter : AppCompatActivity() {
 
@@ -25,11 +26,17 @@ class Wetter : AppCompatActivity() {
     private lateinit var textViewDegres: TextView
     private lateinit var textViewLocation: TextView
     private lateinit var textViewTempDetails: TextView
+    private lateinit var textViewWeatherDetails: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_wetter)
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        imageView = findViewById(R.id.imageViewWetter)
+        textViewDegres = findViewById(R.id.textViewDegres)
+        textViewLocation = findViewById(R.id.textViewLocatoin)
+        textViewTempDetails = findViewById(R.id.textViewTempDetails)
+        textViewWeatherDetails = findViewById(R.id.textViewWeatherDetails)
         checkPermission()
     }
 
@@ -116,10 +123,12 @@ class Wetter : AppCompatActivity() {
         val weatherData = client.getWeatherData(lat, lon, lang)
 
         if (weatherData != null) {
-            println("Temperature: ${weatherData.temperature}")
-            println("Feels Like: ${weatherData.feelsLike}")
-            println("Icon: ${weatherData.icon}")
-            println("City Name: ${weatherData.cityName}")
+            val iconURL = "http://openweathermap.org/img/wn/${weatherData.icon}.png"
+            Picasso.get().load(iconURL).fit().centerCrop().into(imageView)
+            textViewDegres.text = "${weatherData.temperature}°"
+            textViewLocation.text = "${weatherData.cityName}"
+            textViewTempDetails.text = "${weatherData.temperature}° Gefühlt wie ${weatherData.feelsLike}°"
+            textViewWeatherDetails.text = "${weatherData.description}"
         }
     }
 
