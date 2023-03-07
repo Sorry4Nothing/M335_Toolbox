@@ -3,14 +3,13 @@ package com.lehmannroin.toolbox
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.Manifest.permission.INTERNET
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
-import android.widget.Button
 import android.widget.ImageView
-import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -112,6 +111,15 @@ class Wetter : AppCompatActivity() {
         }
     }
 
+    fun sendWidgetData(context: Context, temperature: String, cityName: String, iconUrl: String) {
+        val intent =  Intent(context, WetterWidget::class.java)
+        intent.action = "UpdateWidgetData"
+        intent.putExtra("Temperature", temperature)
+        intent.putExtra("Cityname", cityName)
+        intent.putExtra("IconUrl", iconUrl)
+        context.sendBroadcast(intent)
+    }
+
     fun getWeather(latInt: Double, longInt: Double) {
         val lat = latInt
         val lon = longInt
@@ -126,9 +134,12 @@ class Wetter : AppCompatActivity() {
             val iconURL = "http://openweathermap.org/img/wn/${weatherData.icon}.png"
             Picasso.get().load(iconURL).fit().centerCrop().into(imageView)
             textViewDegres.text = "${weatherData.temperature}°"
+            val temperature = "${weatherData.temperature}°"
             textViewLocation.text = "${weatherData.cityName}"
+            val cityname = "${weatherData.cityName}"
             textViewTempDetails.text = "${weatherData.temperature}° Gefühlt wie ${weatherData.feelsLike}°"
             textViewWeatherDetails.text = "${weatherData.description}"
+            sendWidgetData(this, temperature, cityname, iconURL)
         }
     }
 
