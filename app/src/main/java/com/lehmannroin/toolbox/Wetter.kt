@@ -132,7 +132,7 @@ class Wetter : AppCompatActivity() {
 
         if (weatherData != null) {
             val iconURL = "http://openweathermap.org/img/wn/${weatherData.icon}.png"
-            Picasso.get().load(iconURL).fit().centerCrop().into(imageView)
+
             textViewDegres.text = "${weatherData.temperature}°"
             val temperature = "${weatherData.temperature}°"
             textViewLocation.text = "${weatherData.cityName}"
