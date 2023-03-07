@@ -2,19 +2,33 @@ package com.lehmannroin.toolbox
 
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.Manifest.permission.INTERNET
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
+import android.util.Log
 import android.widget.ImageView
+import android.widget.RemoteViews
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.squareup.picasso.Callback
 import com.squareup.picasso.Picasso
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.IOException
+import java.lang.Exception
+import java.net.URL
 
 class Wetter : AppCompatActivity() {
 
@@ -27,6 +41,10 @@ class Wetter : AppCompatActivity() {
     private lateinit var textViewTempDetails: TextView
     private lateinit var textViewWeatherDetails: TextView
 
+    lateinit var appWidgetManager: AppWidgetManager
+    lateinit var remoteViews: RemoteViews
+    lateinit var widget: ComponentName
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_wetter)
@@ -36,6 +54,11 @@ class Wetter : AppCompatActivity() {
         textViewLocation = findViewById(R.id.textViewLocatoin)
         textViewTempDetails = findViewById(R.id.textViewTempDetails)
         textViewWeatherDetails = findViewById(R.id.textViewWeatherDetails)
+
+        appWidgetManager = AppWidgetManager.getInstance(this)
+        remoteViews = RemoteViews(this.packageName, R.layout.wetter_widget)
+        widget = ComponentName(this, WetterWidget::class.java)
+
         checkPermission()
     }
 
@@ -120,6 +143,18 @@ class Wetter : AppCompatActivity() {
         context.sendBroadcast(intent)
     }
 
+    fun updateWidgetText(temperature: String, cityName: String) {
+        remoteViews.setTextViewText(R.id.textViewDegrees, temperature)
+        remoteViews.setTextViewText(R.id.textViewLocation, cityName)
+        appWidgetManager.updateAppWidget(widget, remoteViews)
+    }
+
+    fun updateWidgetImage(bitmap: Bitmap) {
+        remoteViews.setImageViewBitmap(R.id.imageViewIcon, bitmap)
+        appWidgetManager.updateAppWidget(widget, remoteViews)
+    }
+
+
     fun getWeather(latInt: Double, longInt: Double) {
         val lat = latInt
         val lon = longInt
@@ -132,14 +167,35 @@ class Wetter : AppCompatActivity() {
 
         if (weatherData != null) {
             val iconURL = "http://openweathermap.org/img/wn/${weatherData.icon}.png"
+            Picasso.get().load(iconURL).fit().centerCrop().into(imageView, object : Callback {
+                override fun onSuccess() {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val bitmap = try {
+                            BitmapFactory.decodeStream(URL(iconURL).openConnection().getInputStream())
+                        } catch (e: IOException) {
+                            null
+                        }
+                        withContext(Dispatchers.Main) {
+                            if (bitmap != null) {
+                                updateWidgetImage(bitmap)
+                            } else {
+                                Log.d(iconURL, "Failed to Load Image")
+                            }
+                        }
+                    }
+                }
 
+                override fun onError(e: Exception?) {
+                    Log.d(iconURL, "Failed to Load Image")
+                }
+            })
             textViewDegres.text = "${weatherData.temperature}°"
             val temperature = "${weatherData.temperature}°"
             textViewLocation.text = "${weatherData.cityName}"
             val cityname = "${weatherData.cityName}"
             textViewTempDetails.text = "${weatherData.temperature}° Gefühlt wie ${weatherData.feelsLike}°"
             textViewWeatherDetails.text = "${weatherData.description}"
-            sendWidgetData(this, temperature, cityname, iconURL)
+            updateWidgetText(temperature, cityname)
         }
     }
 
